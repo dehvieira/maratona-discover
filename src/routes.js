@@ -9,7 +9,7 @@ const profile = {
   "monthly-budget": 3000,
   "hours-per-day": 6,
   "days-per-week": 5,
-  "vacation-per-year" : 4
+  "vacation": 4
 }
 
 //request,result
