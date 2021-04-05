@@ -1,23 +1,90 @@
-const express = require('express') //lib express 
-const routes = express.Router() //criando rotas
+const express = require('express'); //lib express
+const routes = express.Router(); //criando rotas
 
-const views = __dirname + "/views/"
+const views = __dirname + '/views/';
 
 const profile = {
-  name: "André Vieira",
-  avatar: "https://avatars.githubusercontent.com/u/27936380?s=400&u=a9f9fdb7020eeabd84c2ab1bbfb598216a4e99c4&v=4",
-  "monthly-budget": 3000,
-  "hours-per-day": 6,
-  "days-per-week": 5,
-  "vacation": 4
+  name: 'André Vieira',
+  avatar: 'https://www.github.com/dehvieira.png',
+  'monthly-budget': 3000,
+  'hours-per-day': 6,
+  'days-per-week': 5,
+  vacation: 4,
+  'value-hour': 75,
+};
+
+const jobs = [
+  {
+    id: 1,
+    name: 'Pizzaria Xpress',
+    'daily-hours': 2,
+    'total-hours': 30,
+    created_at: Date.now(),
+  },
+  {
+    id: 2,
+    name: 'Fagulha Fire',
+    'daily-hours': 3,
+    'total-hours': 25,
+    created_at: Date.now(),
+  },
+];
+
+function remainingDays(job) {
+  const remainingDays = (job['total-hours'] / job['daily-hours']).toFixed();
+
+  const createdDate = new Date(job.created_at);
+  const dueDay = createdDate.getDate() + Number(remainingDays);
+  const dueDateInMS = createdDate.setDate(dueDay);
+
+  const timeDifInms = dueDateInMS - Date.now();
+
+  //transformar milli em dias
+
+  const dayinMs = 1000 * 60 * 60 * 24;
+  const dayDiff = Math.floor(timeDifInms / dayinMs);
+
+  //restam X dias
+  return dayDiff;
 }
 
 //request,result
-routes.get('/', (req,res) => res.render(views+ "index"))
-routes.get('/job', (req,res) => res.render(views+ "job"))
-routes.get('/job/edit', (req,res) => res.render(views +"job-edit"))
-routes.get('/profile', (req,res) => res.render(views + "profile", {profile}))
+routes.get('/', (req, res) => {
+  //ajustes no jobs
+  const updatedJobs = jobs.map((job) => {
+    const remaining = remainingDays(job);
+    const status = remaining <= 0 ? 'done' : 'progress';
 
+    return {
+      ...job,
+      remaining,
+      status,
+      budget: profile['value-hour'] * job['total-hours'],
+    };
+  });
 
+  return res.render(views + 'index', { jobs: updatedJobs });
+});
+
+routes.get('/job', (req, res) => res.render(views + 'job'));
+routes.post('/job', (req, res) => {
+  //{ name: 'teste', 'daily-hours': '4', 'total-hours': '10' }
+
+  const lastId = jobs[jobs.length - 1]?.id || 1;
+
+  jobs.push({
+    id: lastId + 1,
+    name: req.body.name,
+    'daily-hours': req.body['daily-hours'],
+    'total-hours': req.body['total-hours'],
+    created_at: Date.now(), //atribindo data de hoje
+  });
+  return res.redirect('/');
+});
+
+routes.get('/job/edit', (req, res) => res.render(views + 'job-edit'));
+routes.get('/profile', (req, res) =>
+  res.render(views + 'profile', { profile }),
+);
 
 module.exports = routes;
