@@ -94,7 +94,7 @@ const Job = {
 
     save(req, res) {
       //{ name: 'teste', 'daily-hours': '4', 'total-hours': '10' }
-      const lastId = Job.data[Job.data.length - 1]?.id || 1;
+      const lastId = Job.data[Job.data.length - 1]?.id || 0;
 
       Job.data.push({
         id: lastId + 1,
@@ -120,6 +120,40 @@ const Job = {
       );
 
       return res.render(views + 'job-edit', { job });
+    },
+
+    update(req, res) {
+      const jobId = req.params.job;
+
+      const job = Job.data.find((job) => Number(job.id) === Number(jobId));
+
+      if (!job) {
+        return res.send('Job not found');
+      }
+
+      const updatedJob = {
+        ...job,
+        name: req.body.name,
+        'total-hours': req.body['total-hours'],
+        'daily-hours': req.body['daily-hours'],
+      };
+
+      Job.data.map((job) => {
+        if (Number(job.id) === Number(jobId)) {
+          job.updateJob;
+        }
+        return job;
+      });
+
+      res.redirect('/job' + jobId);
+    },
+
+    delete(req, res) {
+      const jobId = req.params.id;
+
+      Job.data = Job.data.filter((job) => Number(job.id) !== Number(job.id));
+
+      return res.redirect('/');
     },
   },
 
@@ -150,6 +184,8 @@ routes.get('/', Job.controllers.index);
 routes.get('/job', Job.controllers.create);
 routes.post('/job', Job.controllers.save);
 routes.get('/job/:id', Job.controllers.show);
+routes.post('/job/:id', Job.controllers.update);
+routes.post('/job/delete/:id', Job.controllers.delete);
 routes.get('/profile', Profile.controllers.index);
 routes.post('/profile', Profile.controllers.update);
 
