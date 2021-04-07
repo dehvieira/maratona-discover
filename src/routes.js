@@ -48,29 +48,28 @@ const Profile = {
     },
   },
 };
-
 const Job = {
   data: [
     {
       id: 1,
-      name: 'Pizzaria Xpress',
+      name: 'Pizzaria Guloso',
       'daily-hours': 2,
-      'total-hours': 30,
+      'total-hours': 1,
       created_at: Date.now(),
     },
     {
       id: 2,
-      name: 'Fagulha Fire',
+      name: 'OneTwo Project',
       'daily-hours': 3,
-      'total-hours': 25,
+      'total-hours': 47,
       created_at: Date.now(),
     },
   ],
 
   controllers: {
     index(req, res) {
-      //ajustes no jobs
       const updatedJobs = Job.data.map((job) => {
+        // ajustes no job
         const remaining = Job.services.remainingDays(job);
         const status = remaining <= 0 ? 'done' : 'progress';
 
@@ -78,10 +77,7 @@ const Job = {
           ...job,
           remaining,
           status,
-          budget: Job.services.calculatorBudget(
-            job,
-            Profile.data['value-hour'],
-          ),
+          budget: Job.services.calculateBudget(job, Profile.data['value-hour']),
         };
       });
 
@@ -93,7 +89,6 @@ const Job = {
     },
 
     save(req, res) {
-      //{ name: 'teste', 'daily-hours': '4', 'total-hours': '10' }
       const lastId = Job.data[Job.data.length - 1]?.id || 0;
 
       Job.data.push({
@@ -101,20 +96,22 @@ const Job = {
         name: req.body.name,
         'daily-hours': req.body['daily-hours'],
         'total-hours': req.body['total-hours'],
-        created_at: Date.now(), //atribindo data de hoje
+        created_at: Date.now(),
       });
+
       return res.redirect('/');
     },
+
     show(req, res) {
       const jobId = req.params.id;
 
-      const job = Job.data.find((job) => Number(job.id == Number(jobId)));
+      const job = Job.data.find((job) => Number(job.id) === Number(jobId));
 
       if (!job) {
-        return res.send('Job not found');
+        return res.send('Job not found!');
       }
 
-      job.budget = Job.services.calculatorBudget(
+      job.budget = Job.services.calculateBudget(
         job,
         Profile.data['value-hour'],
       );
@@ -123,12 +120,12 @@ const Job = {
     },
 
     update(req, res) {
-      const jobId = req.params.job;
+      const jobId = req.params.id;
 
       const job = Job.data.find((job) => Number(job.id) === Number(jobId));
 
       if (!job) {
-        return res.send('Job not found');
+        return res.send('Job not found!');
       }
 
       const updatedJob = {
@@ -138,20 +135,21 @@ const Job = {
         'daily-hours': req.body['daily-hours'],
       };
 
-      Job.data.map((job) => {
+      Job.data = Job.data.map((job) => {
         if (Number(job.id) === Number(jobId)) {
-          job.updateJob;
+          job = updatedJob;
         }
+
         return job;
       });
 
-      res.redirect('/job' + jobId);
+      res.redirect('/job/' + jobId);
     },
 
     delete(req, res) {
       const jobId = req.params.id;
 
-      Job.data = Job.data.filter((job) => Number(job.id) !== Number(job.id));
+      Job.data = Job.data.filter((job) => Number(job.id) !== Number(jobId));
 
       return res.redirect('/');
     },
@@ -159,27 +157,25 @@ const Job = {
 
   services: {
     remainingDays(job) {
+      // cálculo de tempo restante
       const remainingDays = (job['total-hours'] / job['daily-hours']).toFixed();
 
       const createdDate = new Date(job.created_at);
       const dueDay = createdDate.getDate() + Number(remainingDays);
-      const dueDateInMS = createdDate.setDate(dueDay);
+      const dueDateInMs = createdDate.setDate(dueDay);
 
-      const timeDifInms = dueDateInMS - Date.now();
+      const timeDiffInMs = dueDateInMs - Date.now();
+      // transformar milli em dias
+      const dayInMs = 1000 * 60 * 60 * 24;
+      const dayDiff = Math.floor(timeDiffInMs / dayInMs);
 
-      //transformar milli em dias
-
-      const dayinMs = 1000 * 60 * 60 * 24;
-      const dayDiff = Math.floor(timeDifInms / dayinMs);
-
-      //restam X dias
+      // restam x dias
       return dayDiff;
     },
-    calculatorBudget: (job, valueHour) => valueHour * job['total-hours'],
+    calculateBudget: (job, valueHour) => valueHour * job['total-hours'],
   },
 };
 
-//request,result
 routes.get('/', Job.controllers.index);
 routes.get('/job', Job.controllers.create);
 routes.post('/job', Job.controllers.save);
